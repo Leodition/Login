@@ -6,6 +6,7 @@ Integra os acessos já existentes do acervo e da reprografia. A API, os usuário
 
 - `index.html`: formulário, sistemas permitidos e contatos.
 - `app.mjs`: autenticação, escolha do sistema, troca de conta e redefinição obrigatória.
+- `admin.mjs` e `admin.css`: painel AdmLeodition, sites e acessos, configurações iniciais e visualização de contas pelo fluxo de senha mestra já existente.
 - `style.css`: tema escuro responsivo.
 - `CNAME`: domínio existente.
 - `.nojekyll`: publica os arquivos diretamente, sem transformar módulos e HTML.
