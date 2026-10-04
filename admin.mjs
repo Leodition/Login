@@ -528,7 +528,16 @@ async function renderUsers(container) {
         } catch (error) { notice.textContent = error.message; }
         finally { event.currentTarget.disabled = false; }
       });
-      footer.append(activeLabel, saveUser);
+      const resetPassword = button("Gerar senha temporária", "admin-button admin-button-secondary", async (event) => {
+        event.currentTarget.disabled = true;
+        const nextPassword = temporaryPassword();
+        try {
+          await api("/api/admin/usuarios/" + user.id + "/senha", { method: "PUT", body: JSON.stringify({ senha: nextPassword }) });
+          notice.textContent = "Nova senha temporária de @" + user.usuario + " (copie e entregue à pessoa): " + nextPassword + ". A troca será exigida no próximo acesso.";
+        } catch (error) { notice.textContent = error.message; }
+        finally { event.currentTarget.disabled = false; }
+      });
+      footer.append(activeLabel, resetPassword, saveUser);
       card.append(footer);
       userList.append(card);
     });
