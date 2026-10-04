@@ -373,6 +373,7 @@ async function renderUsers(container) {
   form.append(name.label, username.label, unitsLabel, save);
   createBox.append(form);
   college.append(createBox);
+  form.addEventListener("submit", (event) => event.preventDefault(), { capture: true });
 
   const userList = el("div", "admin-user-list");
   userList.append(el("p", "admin-muted", "Carregando contas…"));
