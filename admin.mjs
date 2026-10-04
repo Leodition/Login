@@ -29,7 +29,6 @@ const VIEWS = [
   ["configuracoes", "Configurações", "⚙"],
   ["usuarios", "Usuários e permissões", "♙"],
   ["aprovacoes", "Aprovações", "✓"],
-  ["alteracoes", "Alterações", "↻"]
 ];
 const byId = (id) => document.getElementById(id);
 const el = (tag, className, text) => {
@@ -228,7 +227,6 @@ function navigate(view) {
   else if (view === "configuracoes") void renderSettings(page);
   else if (view === "usuarios") void renderUsers(page);
   else if (view === "aprovacoes") renderApprovals(page);
-  else if (view === "alteracoes") void renderChanges(page);
 }
 
 function sectionIntro(container, kicker, title, description) {
