@@ -2,19 +2,33 @@ const API = "https://acervo-leoalfa.onrender.com";
 const TOKEN_KEY = "leodition_central_token";
 const RETURN_KEY = "leodition_admin_return";
 const PREVIEW_KEY = "leodition_preview_destination";
-const PRODUCTS = [
-  { title: "Acervo e Biblioteca", detail: "Biblioteca e ferramentas administrativas", destination: "acervo", category: "Sistema", icon: "▤" },
-  { title: "Reprografia", detail: "Reprografia, Lellos e ferramentas relacionadas", destination: "repografia", category: "Sistema", icon: "▧" },
-  { title: "Jogos", detail: "Experiência de jogos integrada ao Acervo", destination: "acervo", category: "Módulo", icon: "◇" },
-  { title: "Monitor", detail: "Acompanhamento pelo sistema Acervo", destination: "acervo", category: "Módulo", icon: "◉" },
-  { title: "Revista", detail: "Revista digital disponível pelo Acervo", destination: "acervo", category: "Módulo", icon: "▱" }
+const PRODUCT_GROUPS = [
+  {
+    id: "colegio",
+    title: "Colégio Leonardo da Vinci",
+    description: "Serviços, sistemas e conteúdos do colégio.",
+    items: [
+      { title: "Acervo e Biblioteca", detail: "Biblioteca e ferramentas administrativas", destination: "acervo", category: "Sistema", icon: "▤" },
+      { title: "Reprografia", detail: "Reprografia, Lellos, agenda e ferramentas", destination: "repografia", category: "Sistema", icon: "▧" },
+      { title: "Jogos", detail: "Jogos educativos integrados ao Acervo", destination: "acervo", category: "Módulo", icon: "◇" },
+      { title: "Monitor", detail: "Acompanhamento pelo sistema Acervo", destination: "acervo", category: "Módulo", icon: "◉" },
+      { title: "Revista", detail: "Revista digital disponível pelo Acervo", destination: "acervo", category: "Módulo", icon: "▱" }
+    ]
+  },
+  {
+    id: "enquadrilhos",
+    title: "Enquadrilhos",
+    description: "Aplicativo independente, com acessos e permissões próprios.",
+    items: []
+  }
 ];
+const PRODUCTS = PRODUCT_GROUPS.flatMap((group) => group.items.map((product) => ({ ...product, group: group.id })));
 const VIEWS = [
   ["inicio", "Visão geral", "⌂"],
   ["sites", "Sites e acessos", "▦"],
   ["configuracoes", "Configurações", "⚙"],
+  ["usuarios", "Usuários e permissões", "♙"],
   ["aprovacoes", "Aprovações", "✓"],
-  ["alteracoes", "Alterações", "↻"]
 ];
 const byId = (id) => document.getElementById(id);
 const el = (tag, className, text) => {
@@ -210,9 +224,9 @@ function navigate(view) {
   panel.querySelector(".admin-page-title").textContent = title;
   if (view === "inicio") renderOverview(page);
   else if (view === "sites") renderSites(page);
-  else if (view === "configuracoes") renderSettings(page);
+  else if (view === "configuracoes") void renderSettings(page);
+  else if (view === "usuarios") void renderUsers(page);
   else if (view === "aprovacoes") renderApprovals(page);
-  else if (view === "alteracoes") void renderChanges(page);
 }
 
 function sectionIntro(container, kicker, title, description) {
@@ -259,18 +273,22 @@ function renderOverview(container) {
 }
 
 function renderSites(container) {
-  sectionIntro(container, "PRODUTOS E SISTEMAS", "Sites e acessos", "Acesse cada ambiente como administrador ou confira a experiência de uma conta.");
-  const direct = el("section", "admin-content-section");
-  direct.append(el("div", "admin-section-heading", "Sistemas integrados"));
-  const systems = el("div", "admin-product-grid");
-  PRODUCTS.filter((product) => product.category === "Sistema").forEach((product) => systems.append(productCard(product)));
-  direct.append(systems);
-  const modules = el("section", "admin-content-section");
-  modules.append(el("div", "admin-section-heading", "Módulos disponíveis pelo Acervo"));
-  const grid = el("div", "admin-product-grid");
-  PRODUCTS.filter((product) => product.category === "Módulo").forEach((product) => grid.append(productCard(product)));
-  modules.append(grid);
-  container.append(direct, modules);
+  sectionIntro(container, "PRODUTOS E SISTEMAS", "Sites e acessos", "Os serviços estão organizados por produto; os acessos de cada grupo serão gerenciados separadamente.");
+  PRODUCT_GROUPS.forEach((group) => {
+    const section = el("section", "admin-content-section");
+    section.append(el("div", "admin-section-heading", group.title));
+    section.append(el("p", "admin-muted", group.description));
+    if (group.items.length) {
+      const grid = el("div", "admin-product-grid");
+      group.items.forEach((product) => grid.append(productCard(product)));
+      section.append(grid);
+    } else {
+      const placeholder = el("article", "admin-info-card admin-group-placeholder");
+      placeholder.append(el("p", "admin-eyebrow", "APLICATIVO INDEPENDENTE"), el("h2", "", "Espaço de acesso do Enquadrilhos"), el("p", "admin-muted", "O grupo fica separado do Colégio. A conexão de login e o gerenciamento de permissões serão habilitados quando o aplicativo estiver integrado."));
+      section.append(placeholder);
+    }
+    container.append(section);
+  });
 }
 
 function settingCard(icon, title, description, status) {
@@ -280,21 +298,274 @@ function settingCard(icon, title, description, status) {
   return card;
 }
 
-function renderSettings(container) {
-  sectionIntro(container, "CONTROLE CENTRAL", "Configurações gerais", "Organize as preferências, permissões e integrações administrativas em um único espaço.");
+async function renderSettings(container) {
+  sectionIntro(container, "CONTROLE CENTRAL", "Configurações gerais", "Gerencie opções do Acervo, módulos ativos e menus visíveis pelo AdmLeodition.");
   const cards = el("div", "admin-settings-grid");
   cards.append(
-    settingCard("◎", "Conta e segurança", "Perfil administrativo, credenciais e proteção de sessão.", "Central de login"),
-    settingCard("♙", "Usuários e permissões", "Acessos individuais e sistemas permitidos para cada conta.", "Acesso pelo sistema"),
-    settingCard("▧", "Sites e produtos", "Organização dos sistemas e módulos vinculados.", "5 áreas listadas"),
-    settingCard("◌", "Preferências gerais", "Contatos, identidade visual e opções da central.", "A definir"),
+    settingCard("◎", "Conta e segurança", "Perfil administrativo e proteção da sessão.", "Central de login"),
+    settingCard("♙", "Usuários e permissões", "Acessos individuais separados por produto.", "Gerenciar contas"),
+    settingCard("▧", "Sites e produtos", "Acervo e Enquadrilhos em áreas próprias.", "2 grupos"),
     settingCard("✓", "Aprovações", "Solicitações administrativas que aguardam decisão.", "Área preparada"),
     settingCard("↻", "Histórico de alterações", "Novidades e mudanças publicadas nos sistemas.", "Ver alterações")
   );
   container.append(cards);
-  const note = el("div", "admin-callout");
-  note.append(el("strong", "", "Controles conectados com segurança"), el("p", "admin-muted", "O painel reúne as áreas de administração. Alterações em contas e permissões continuam sendo validadas pelo sistema que guarda esses dados."));
-  container.append(note);
+  container.append(button("Abrir usuários e permissões →", "admin-button admin-button-primary", () => navigate("usuarios")));
+
+  const menuCard = el("section", "admin-settings-panel");
+  menuCard.append(el("p", "admin-eyebrow", "ACERVO · PERSONALIZAÇÃO"), el("h2", "", "Menus visíveis para a equipe"), el("p", "admin-muted", "Escolha quais áreas do Acervo aparecem no menu geral."));
+  const menus = { livros: "Livros", alunos: "Leitores", leozinho: "Revista online", agenda: "Agenda", sas: "Livros SAS", emprestimos: "Empréstimos", devolucoes: "Devoluções", reservas: "Reservas", etiquetas: "Etiquetas", relatorios: "Relatórios" };
+  const currentPermissions = (() => { try { return typeof currentUser?.permissoes === "string" ? JSON.parse(currentUser.permissoes) : currentUser?.permissoes || {}; } catch { return {}; } })();
+  const hidden = Array.isArray(currentPermissions.menus_ocultos) ? currentPermissions.menus_ocultos : [];
+  const menuGrid = el("div", "admin-user-permissions");
+  Object.entries(menus).forEach(([key, label]) => {
+    const item = el("label", "", label);
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = !hidden.includes(key);
+    checkbox.dataset.adminMenu = key;
+    item.prepend(checkbox);
+    menuGrid.append(item);
+  });
+  menuCard.append(menuGrid);
+  const menuMessage = el("p", "admin-form-message");
+  const saveMenus = button("Salvar menus visíveis", "admin-button admin-button-primary", async (event) => {
+    event.currentTarget.disabled = true;
+    try {
+      const hiddenMenus = [...menuGrid.querySelectorAll("[data-admin-menu]")].filter((item) => !item.checked).map((item) => item.dataset.adminMenu);
+      const result = await api("/api/admin/meus-menus", { method: "PUT", body: JSON.stringify({ menus_ocultos: hiddenMenus }) });
+      currentUser.permissoes = result.permissoes;
+      menuMessage.textContent = "Menus do Acervo atualizados.";
+    } catch (error) { menuMessage.textContent = error.message; }
+    finally { event.currentTarget.disabled = false; }
+  });
+  menuCard.append(saveMenus, menuMessage);
+
+  const modulesCard = el("section", "admin-settings-panel");
+  modulesCard.append(el("p", "admin-eyebrow", "ACERVO · MÓDULOS"), el("h2", "", "Opções do sistema"));
+  const moduleGrid = el("div", "admin-user-permissions");
+  const moduleChoices = {};
+  [["reservas_ativas", "Reservas"], ["etiquetas_ativas", "Etiquetas"]].forEach(([key, label]) => {
+    const item = el("label", "", label);
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.dataset.module = key;
+    moduleChoices[key] = checkbox;
+    item.prepend(checkbox);
+    moduleGrid.append(item);
+  });
+  modulesCard.append(moduleGrid);
+  const moduleMessage = el("p", "admin-form-message");
+  const saveModules = button("Salvar opções do sistema", "admin-button admin-button-primary", async (event) => {
+    event.currentTarget.disabled = true;
+    try {
+      const body = Object.fromEntries(Object.entries(moduleChoices).map(([key, input]) => [key, input.checked]));
+      const result = await api("/api/admin/modulos", { method: "PUT", body: JSON.stringify(body) });
+      Object.entries(moduleChoices).forEach(([key, input]) => { input.checked = Boolean(result[key]); });
+      moduleMessage.textContent = "Opções do Acervo atualizadas.";
+    } catch (error) { moduleMessage.textContent = error.message; }
+    finally { event.currentTarget.disabled = false; }
+  });
+  modulesCard.append(saveModules, moduleMessage);
+
+  const generalCard = el("section", "admin-settings-panel");
+  generalCard.append(el("p", "admin-eyebrow", "ACERVO · OPÇÕES GERAIS"), el("h2", "", "Identificação e prazo de empréstimo"));
+  const settingsForm = el("form", "admin-general-settings-form");
+  const systemNameLabel = el("label", "admin-label", "Nome do sistema");
+  const systemName = document.createElement("input");
+  systemName.required = true;
+  systemNameLabel.append(systemName);
+  const daysLabel = el("label", "admin-label", "Prazo padrão de empréstimo (dias)");
+  const days = document.createElement("input");
+  days.type = "number";
+  days.min = "1";
+  days.max = "365";
+  days.required = true;
+  daysLabel.append(days);
+  const settingsMessage = el("p", "admin-form-message");
+  const saveSettings = button("Salvar opções gerais", "admin-button admin-button-primary", () => {});
+  saveSettings.type = "submit";
+  settingsForm.append(systemNameLabel, daysLabel, saveSettings, settingsMessage);
+  generalCard.append(settingsForm);
+  container.append(menuCard, modulesCard, generalCard);
+  settingsForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    saveSettings.disabled = true;
+    try {
+      await api("/api/configuracoes", { method: "PUT", body: JSON.stringify({ nome_sistema: systemName.value.trim(), prazo_emprestimo: Number(days.value) }) });
+      settingsMessage.textContent = "Opções gerais atualizadas.";
+    } catch (error) { settingsMessage.textContent = error.message; }
+    finally { saveSettings.disabled = false; }
+  });
+  try {
+    const [moduleData, generalData] = await Promise.all([api("/api/admin/modulos"), api("/api/configuracoes")]);
+    if (!container.isConnected) return;
+    Object.entries(moduleChoices).forEach(([key, input]) => { input.checked = Boolean(moduleData[key]); });
+    systemName.value = generalData.nome_sistema || "Acervo LeoAlfa";
+    days.value = String(generalData.prazo_emprestimo || 7);
+  } catch (error) {
+    if (container.isConnected) menuMessage.textContent = "Não foi possível carregar as opções do Acervo. " + error.message;
+  }
+}
+
+const COLLEGE_PERMISSIONS = {
+  inicio: "Início",
+  livros: "Livros",
+  alunos: "Leitores",
+  emprestimos: "Empréstimos",
+  devolucoes: "Devoluções",
+  reservas: "Reservas",
+  leozinho: "Revista online",
+  agenda: "Agenda",
+  sas: "Livros SAS",
+  etiquetas: "Etiquetas",
+  relatorios: "Relatórios",
+  configuracoes: "Configurações"
+};
+
+function temporaryPassword() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+  const bytes = crypto.getRandomValues(new Uint8Array(20));
+  return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
+}
+
+async function renderUsers(container) {
+  sectionIntro(container, "CONTAS E ACESSOS", "Usuários e permissões", "As permissões de cada conta ficam organizadas no produto correspondente.");
+  const college = el("section", "admin-content-section");
+  college.append(el("div", "admin-section-heading", "Colégio Leonardo da Vinci"));
+  college.append(el("p", "admin-muted", "Contas e menus disponíveis no Acervo, Reprografia, Jogos, Monitor e Revista."));
+
+  const notice = el("p", "admin-form-message");
+  const createBox = el("article", "admin-user-create");
+  createBox.append(el("h2", "", "Criar conta de funcionário do Acervo"));
+  createBox.append(el("p", "admin-muted", "A conta começa com permissões de trabalho diário. A senha temporária será exibida uma vez e a pessoa deverá trocá-la ao entrar."));
+  const form = el("form", "admin-user-create-form");
+  const field = (labelText, name, value, type = "text") => {
+    const label = el("label", "admin-label", labelText);
+    const input = document.createElement("input");
+    input.name = name;
+    input.type = type;
+    input.value = value;
+    input.required = true;
+    input.autocomplete = "off";
+    label.append(input);
+    return { label, input };
+  };
+  const name = field("Nome", "nome", "Leonardo");
+  const username = field("Usuário", "usuario", "leonardosilvart");
+  const unitsLabel = el("label", "admin-label", "Unidade");
+  const units = document.createElement("select");
+  units.required = true;
+  units.append(new Option("Carregando unidades…", ""));
+  unitsLabel.append(units);
+  const save = button("Criar Leonardo", "admin-button admin-button-primary", () => {});
+  save.type = "submit";
+  form.append(name.label, username.label, unitsLabel, save);
+  createBox.append(form);
+  college.append(createBox);
+  form.addEventListener("submit", (event) => event.preventDefault(), { capture: true });
+
+  const userList = el("div", "admin-user-list");
+  userList.append(el("p", "admin-muted", "Carregando contas…"));
+  college.append(userList);
+
+  const enquadrilhos = el("section", "admin-content-section");
+  enquadrilhos.append(el("div", "admin-section-heading", "Enquadrilhos"));
+  const pending = el("article", "admin-info-card admin-group-placeholder");
+  pending.append(el("p", "admin-eyebrow", "GESTÃO SEPARADA"), el("h2", "", "Contas e permissões do Enquadrilhos"), el("p", "admin-muted", "A gestão ficará isolada das contas do Colégio. O aplicativo ainda precisa de autenticação e API próprias para que essas permissões sejam efetivamente aplicadas."));
+  enquadrilhos.append(pending);
+  container.append(college, enquadrilhos, notice);
+
+  let accounts = [];
+  let unitsList = [];
+  try {
+    [accounts, unitsList] = await Promise.all([api("/api/admin/usuarios"), api("/api/unidades")]);
+    if (!container.isConnected) return;
+    units.replaceChildren(new Option("Selecione a unidade", ""));
+    unitsList.forEach((unit) => units.append(new Option(unit.nome, String(unit.id))));
+    const existing = accounts.find((user) => String(user.usuario).toLowerCase() === "leonardosilvart");
+    if (existing) {
+      name.input.value = existing.nome || "Leonardo";
+      username.input.value = existing.usuario;
+      createBox.querySelector("h2").textContent = "Conta do Leonardo já cadastrada";
+      form.hidden = true;
+    }
+    userList.replaceChildren();
+    accounts.forEach((user) => {
+      const card = el("article", "admin-user-admin-card");
+      const top = el("div", "admin-user-admin-head");
+      top.append(el("div", "", user.nome || user.usuario), el("span", "setting-status", user.ativo ? "Ativo" : "Desativado"));
+      top.firstElementChild.className = "admin-user-admin-name";
+      top.firstElementChild.append(el("small", "", "@" + user.usuario + " · " + (user.unidade_nome || "Sem unidade")));
+      card.append(top);
+      const permissions = el("div", "admin-user-permissions");
+      Object.entries(COLLEGE_PERMISSIONS).forEach(([key, label]) => {
+        const item = el("label", "", label);
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.dataset.permission = key;
+        checkbox.checked = user.permissoes?.[key] !== false;
+        item.prepend(checkbox);
+        permissions.append(item);
+      });
+      card.append(permissions);
+      const footer = el("div", "admin-user-admin-actions");
+      const activeLabel = el("label", "", "Conta ativa");
+      const active = document.createElement("input");
+      active.type = "checkbox";
+      active.className = "user-active-toggle";
+      active.checked = Boolean(user.ativo);
+      activeLabel.prepend(active);
+      const saveUser = button("Salvar permissões", "admin-button admin-button-secondary", async (event) => {
+        event.currentTarget.disabled = true;
+        try {
+          const nextPermissions = { ...(user.permissoes || {}), acesso: user.permissoes?.acesso || "biblioteca" };
+          card.querySelectorAll("[data-permission]").forEach((checkbox) => { nextPermissions[checkbox.dataset.permission] = checkbox.checked; });
+          await api("/api/admin/usuarios/" + user.id, {
+            method: "PUT",
+            body: JSON.stringify({ nome: user.nome || user.usuario, usuario: user.usuario, unidade_id: user.unidade_id, ativo: active.checked, telefone: user.telefone || "", email: user.email || "", permissoes: nextPermissions })
+          });
+          notice.textContent = "Permissões de @" + user.usuario + " salvas.";
+        } catch (error) { notice.textContent = error.message; }
+        finally { event.currentTarget.disabled = false; }
+      });
+      const resetPassword = button("Gerar senha temporária", "admin-button admin-button-secondary", async (event) => {
+        event.currentTarget.disabled = true;
+        const nextPassword = temporaryPassword();
+        try {
+          await api("/api/admin/usuarios/" + user.id + "/senha", { method: "PUT", body: JSON.stringify({ senha: nextPassword }) });
+          notice.textContent = "Nova senha temporária de @" + user.usuario + " (copie e entregue à pessoa): " + nextPassword + ". A troca será exigida no próximo acesso.";
+        } catch (error) { notice.textContent = error.message; }
+        finally { event.currentTarget.disabled = false; }
+      });
+      footer.append(activeLabel, resetPassword, saveUser);
+      card.append(footer);
+      userList.append(card);
+    });
+    if (!accounts.length) userList.append(el("p", "admin-muted", "Ainda não há contas cadastradas."));
+  } catch (error) {
+    if (container.isConnected) userList.replaceChildren(el("p", "admin-muted", "Não foi possível carregar usuários e unidades. " + error.message));
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!units.value) { notice.textContent = "Selecione a unidade do Leonardo."; return; }
+    const initialPassword = temporaryPassword();
+    const saveButton = form.querySelector('[type="submit"]');
+    saveButton.disabled = true;
+    try {
+      const permissions = Object.fromEntries(Object.keys(COLLEGE_PERMISSIONS).map((key) => [key, key !== "configuracoes"]));
+      permissions.acesso = "biblioteca";
+      await api("/api/admin/usuarios", {
+        method: "POST",
+        body: JSON.stringify({ nome: name.input.value.trim(), usuario: username.input.value.trim(), senha: initialPassword, unidade_id: Number(units.value), permissoes: permissions })
+      });
+      notice.textContent = "Conta criada. Senha temporária (copie e entregue ao Leonardo): " + initialPassword + ". A troca será exigida no primeiro acesso.";
+      createBox.querySelector("h2").textContent = "Conta do Leonardo criada";
+      form.hidden = true;
+      userList.replaceChildren(el("p", "admin-muted", "Atualize a página para conferir as contas e permissões."));
+    } catch (error) { notice.textContent = error.message; }
+    finally { saveButton.disabled = false; }
+  });
 }
 
 function renderApprovals(container) {
