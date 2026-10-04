@@ -2,13 +2,27 @@ const API = "https://acervo-leoalfa.onrender.com";
 const TOKEN_KEY = "leodition_central_token";
 const RETURN_KEY = "leodition_admin_return";
 const PREVIEW_KEY = "leodition_preview_destination";
-const PRODUCTS = [
-  { title: "Acervo e Biblioteca", detail: "Biblioteca e ferramentas administrativas", destination: "acervo", category: "Sistema", icon: "▤" },
-  { title: "Reprografia", detail: "Reprografia, Lellos e ferramentas relacionadas", destination: "repografia", category: "Sistema", icon: "▧" },
-  { title: "Jogos", detail: "Experiência de jogos integrada ao Acervo", destination: "acervo", category: "Módulo", icon: "◇" },
-  { title: "Monitor", detail: "Acompanhamento pelo sistema Acervo", destination: "acervo", category: "Módulo", icon: "◉" },
-  { title: "Revista", detail: "Revista digital disponível pelo Acervo", destination: "acervo", category: "Módulo", icon: "▱" }
+const PRODUCT_GROUPS = [
+  {
+    id: "colegio",
+    title: "Colégio Leonardo da Vinci",
+    description: "Serviços, sistemas e conteúdos do colégio.",
+    items: [
+      { title: "Acervo e Biblioteca", detail: "Biblioteca e ferramentas administrativas", destination: "acervo", category: "Sistema", icon: "▤" },
+      { title: "Reprografia", detail: "Reprografia, Lellos, agenda e ferramentas", destination: "repografia", category: "Sistema", icon: "▧" },
+      { title: "Jogos", detail: "Jogos educativos integrados ao Acervo", destination: "acervo", category: "Módulo", icon: "◇" },
+      { title: "Monitor", detail: "Acompanhamento pelo sistema Acervo", destination: "acervo", category: "Módulo", icon: "◉" },
+      { title: "Revista", detail: "Revista digital disponível pelo Acervo", destination: "acervo", category: "Módulo", icon: "▱" }
+    ]
+  },
+  {
+    id: "enquadrilhos",
+    title: "Enquadrilhos",
+    description: "Aplicativo independente, com acessos e permissões próprios.",
+    items: []
+  }
 ];
+const PRODUCTS = PRODUCT_GROUPS.flatMap((group) => group.items.map((product) => ({ ...product, group: group.id })));
 const VIEWS = [
   ["inicio", "Visão geral", "⌂"],
   ["sites", "Sites e acessos", "▦"],
@@ -259,18 +273,22 @@ function renderOverview(container) {
 }
 
 function renderSites(container) {
-  sectionIntro(container, "PRODUTOS E SISTEMAS", "Sites e acessos", "Acesse cada ambiente como administrador ou confira a experiência de uma conta.");
-  const direct = el("section", "admin-content-section");
-  direct.append(el("div", "admin-section-heading", "Sistemas integrados"));
-  const systems = el("div", "admin-product-grid");
-  PRODUCTS.filter((product) => product.category === "Sistema").forEach((product) => systems.append(productCard(product)));
-  direct.append(systems);
-  const modules = el("section", "admin-content-section");
-  modules.append(el("div", "admin-section-heading", "Módulos disponíveis pelo Acervo"));
-  const grid = el("div", "admin-product-grid");
-  PRODUCTS.filter((product) => product.category === "Módulo").forEach((product) => grid.append(productCard(product)));
-  modules.append(grid);
-  container.append(direct, modules);
+  sectionIntro(container, "PRODUTOS E SISTEMAS", "Sites e acessos", "Os serviços estão organizados por produto; os acessos de cada grupo serão gerenciados separadamente.");
+  PRODUCT_GROUPS.forEach((group) => {
+    const section = el("section", "admin-content-section");
+    section.append(el("div", "admin-section-heading", group.title));
+    section.append(el("p", "admin-muted", group.description));
+    if (group.items.length) {
+      const grid = el("div", "admin-product-grid");
+      group.items.forEach((product) => grid.append(productCard(product)));
+      section.append(grid);
+    } else {
+      const placeholder = el("article", "admin-info-card admin-group-placeholder");
+      placeholder.append(el("p", "admin-eyebrow", "APLICATIVO INDEPENDENTE"), el("h2", "", "Espaço de acesso do Enquadrilhos"), el("p", "admin-muted", "O grupo fica separado do Colégio. A conexão de login e o gerenciamento de permissões serão habilitados quando o aplicativo estiver integrado."));
+      section.append(placeholder);
+    }
+    container.append(section);
+  });
 }
 
 function settingCard(icon, title, description, status) {
@@ -285,7 +303,7 @@ function renderSettings(container) {
   const cards = el("div", "admin-settings-grid");
   cards.append(
     settingCard("◎", "Conta e segurança", "Perfil administrativo, credenciais e proteção de sessão.", "Central de login"),
-    settingCard("♙", "Usuários e permissões", "Acessos individuais e sistemas permitidos para cada conta.", "Acesso pelo sistema"),
+    settingCard("♙", "Usuários e permissões", "Permissões separadas para Colégio Leonardo da Vinci e Enquadrilhos.", "Integração em andamento"),
     settingCard("▧", "Sites e produtos", "Organização dos sistemas e módulos vinculados.", "5 áreas listadas"),
     settingCard("◌", "Preferências gerais", "Contatos, identidade visual e opções da central.", "A definir"),
     settingCard("✓", "Aprovações", "Solicitações administrativas que aguardam decisão.", "Área preparada"),
