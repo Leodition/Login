@@ -27,6 +27,7 @@ const VIEWS = [
   ["inicio", "Visão geral", "⌂"],
   ["sites", "Sites e acessos", "▦"],
   ["configuracoes", "Configurações", "⚙"],
+  ["usuarios", "Usuários e permissões", "♙"],
   ["aprovacoes", "Aprovações", "✓"],
   ["alteracoes", "Alterações", "↻"]
 ];
@@ -225,6 +226,7 @@ function navigate(view) {
   if (view === "inicio") renderOverview(page);
   else if (view === "sites") renderSites(page);
   else if (view === "configuracoes") renderSettings(page);
+  else if (view === "usuarios") void renderUsers(page);
   else if (view === "aprovacoes") renderApprovals(page);
   else if (view === "alteracoes") void renderChanges(page);
 }
@@ -310,9 +312,161 @@ function renderSettings(container) {
     settingCard("↻", "Histórico de alterações", "Novidades e mudanças publicadas nos sistemas.", "Ver alterações")
   );
   container.append(cards);
+  container.append(button("Gerenciar usuários e permissões →", "admin-button admin-button-primary", () => navigate("usuarios")));
   const note = el("div", "admin-callout");
   note.append(el("strong", "", "Controles conectados com segurança"), el("p", "admin-muted", "O painel reúne as áreas de administração. Alterações em contas e permissões continuam sendo validadas pelo sistema que guarda esses dados."));
   container.append(note);
+}
+
+const COLLEGE_PERMISSIONS = {
+  inicio: "Início",
+  livros: "Livros",
+  alunos: "Leitores",
+  emprestimos: "Empréstimos",
+  devolucoes: "Devoluções",
+  reservas: "Reservas",
+  leozinho: "Revista online",
+  agenda: "Agenda",
+  sas: "Livros SAS",
+  etiquetas: "Etiquetas",
+  relatorios: "Relatórios",
+  configuracoes: "Configurações"
+};
+
+function temporaryPassword() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+  const bytes = crypto.getRandomValues(new Uint8Array(20));
+  return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
+}
+
+async function renderUsers(container) {
+  sectionIntro(container, "CONTAS E ACESSOS", "Usuários e permissões", "As permissões de cada conta ficam organizadas no produto correspondente.");
+  const college = el("section", "admin-content-section");
+  college.append(el("div", "admin-section-heading", "Colégio Leonardo da Vinci"));
+  college.append(el("p", "admin-muted", "Contas e menus disponíveis no Acervo, Reprografia, Jogos, Monitor e Revista."));
+
+  const notice = el("p", "admin-form-message");
+  const createBox = el("article", "admin-user-create");
+  createBox.append(el("h2", "", "Criar conta de funcionário do Acervo"));
+  createBox.append(el("p", "admin-muted", "A conta começa com permissões de trabalho diário. A senha temporária será exibida uma vez e a pessoa deverá trocá-la ao entrar."));
+  const form = el("form", "admin-user-create-form");
+  const field = (labelText, name, value, type = "text") => {
+    const label = el("label", "admin-label", labelText);
+    const input = document.createElement("input");
+    input.name = name;
+    input.type = type;
+    input.value = value;
+    input.required = true;
+    input.autocomplete = "off";
+    label.append(input);
+    return { label, input };
+  };
+  const name = field("Nome", "nome", "Leonardo");
+  const username = field("Usuário", "usuario", "leonardosilvart");
+  const unitsLabel = el("label", "admin-label", "Unidade");
+  const units = document.createElement("select");
+  units.required = true;
+  units.append(new Option("Carregando unidades…", ""));
+  unitsLabel.append(units);
+  const save = button("Criar Leonardo", "admin-button admin-button-primary", () => {});
+  save.type = "submit";
+  form.append(name.label, username.label, unitsLabel, save);
+  createBox.append(form);
+  college.append(createBox);
+
+  const userList = el("div", "admin-user-list");
+  userList.append(el("p", "admin-muted", "Carregando contas…"));
+  college.append(userList);
+
+  const enquadrilhos = el("section", "admin-content-section");
+  enquadrilhos.append(el("div", "admin-section-heading", "Enquadrilhos"));
+  const pending = el("article", "admin-info-card admin-group-placeholder");
+  pending.append(el("p", "admin-eyebrow", "GESTÃO SEPARADA"), el("h2", "", "Contas e permissões do Enquadrilhos"), el("p", "admin-muted", "A gestão ficará isolada das contas do Colégio. O aplicativo ainda precisa de autenticação e API próprias para que essas permissões sejam efetivamente aplicadas."));
+  enquadrilhos.append(pending);
+  container.append(college, enquadrilhos, notice);
+
+  let accounts = [];
+  let unitsList = [];
+  try {
+    [accounts, unitsList] = await Promise.all([api("/api/admin/usuarios"), api("/api/unidades")]);
+    if (!container.isConnected) return;
+    units.replaceChildren(new Option("Selecione a unidade", ""));
+    unitsList.forEach((unit) => units.append(new Option(unit.nome, String(unit.id))));
+    const existing = accounts.find((user) => String(user.usuario).toLowerCase() === "leonardosilvart");
+    if (existing) {
+      name.input.value = existing.nome || "Leonardo";
+      username.input.value = existing.usuario;
+      createBox.querySelector("h2").textContent = "Conta do Leonardo já cadastrada";
+      form.hidden = true;
+    }
+    userList.replaceChildren();
+    accounts.forEach((user) => {
+      const card = el("article", "admin-user-admin-card");
+      const top = el("div", "admin-user-admin-head");
+      top.append(el("div", "", user.nome || user.usuario), el("span", "setting-status", user.ativo ? "Ativo" : "Desativado"));
+      top.firstElementChild.className = "admin-user-admin-name";
+      top.firstElementChild.append(el("small", "", "@" + user.usuario + " · " + (user.unidade_nome || "Sem unidade")));
+      card.append(top);
+      const permissions = el("div", "admin-user-permissions");
+      Object.entries(COLLEGE_PERMISSIONS).forEach(([key, label]) => {
+        const item = el("label", "", label);
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.dataset.permission = key;
+        checkbox.checked = user.permissoes?.[key] !== false;
+        item.prepend(checkbox);
+        permissions.append(item);
+      });
+      card.append(permissions);
+      const footer = el("div", "admin-user-admin-actions");
+      const activeLabel = el("label", "", "Conta ativa");
+      const active = document.createElement("input");
+      active.type = "checkbox";
+      active.className = "user-active-toggle";
+      active.checked = Boolean(user.ativo);
+      activeLabel.prepend(active);
+      const saveUser = button("Salvar permissões", "admin-button admin-button-secondary", async (event) => {
+        event.currentTarget.disabled = true;
+        try {
+          const nextPermissions = { ...(user.permissoes || {}), acesso: user.permissoes?.acesso || "biblioteca" };
+          card.querySelectorAll("[data-permission]").forEach((checkbox) => { nextPermissions[checkbox.dataset.permission] = checkbox.checked; });
+          await api("/api/admin/usuarios/" + user.id, {
+            method: "PUT",
+            body: JSON.stringify({ nome: user.nome || user.usuario, usuario: user.usuario, unidade_id: user.unidade_id, ativo: active.checked, telefone: user.telefone || "", email: user.email || "", permissoes: nextPermissions })
+          });
+          notice.textContent = "Permissões de @" + user.usuario + " salvas.";
+        } catch (error) { notice.textContent = error.message; }
+        finally { event.currentTarget.disabled = false; }
+      });
+      footer.append(activeLabel, saveUser);
+      card.append(footer);
+      userList.append(card);
+    });
+    if (!accounts.length) userList.append(el("p", "admin-muted", "Ainda não há contas cadastradas."));
+  } catch (error) {
+    if (container.isConnected) userList.replaceChildren(el("p", "admin-muted", "Não foi possível carregar usuários e unidades. " + error.message));
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!units.value) { notice.textContent = "Selecione a unidade do Leonardo."; return; }
+    const initialPassword = temporaryPassword();
+    const saveButton = form.querySelector('[type="submit"]');
+    saveButton.disabled = true;
+    try {
+      const permissions = Object.fromEntries(Object.keys(COLLEGE_PERMISSIONS).map((key) => [key, key !== "configuracoes"]));
+      permissions.acesso = "biblioteca";
+      await api("/api/admin/usuarios", {
+        method: "POST",
+        body: JSON.stringify({ nome: name.input.value.trim(), usuario: username.input.value.trim(), senha: initialPassword, unidade_id: Number(units.value), permissoes: permissions })
+      });
+      notice.textContent = "Conta criada. Senha temporária (copie e entregue ao Leonardo): " + initialPassword + ". A troca será exigida no primeiro acesso.";
+      createBox.querySelector("h2").textContent = "Conta do Leonardo criada";
+      form.hidden = true;
+      userList.replaceChildren(el("p", "admin-muted", "Atualize a página para conferir as contas e permissões."));
+    } catch (error) { notice.textContent = error.message; }
+    finally { saveButton.disabled = false; }
+  });
 }
 
 function renderApprovals(container) {
