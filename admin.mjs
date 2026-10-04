@@ -4,7 +4,7 @@ const RETURN_KEY = "leodition_admin_return";
 const PREVIEW_KEY = "leodition_preview_destination";
 const PRODUCTS = [
   { title: "Acervo e Biblioteca", detail: "Biblioteca e ferramentas administrativas", destination: "acervo", category: "Sistema" },
-  { title: "Repografia", detail: "Repografia, Lellos e ferramentas relacionadas", destination: "repografia", category: "Sistema" },
+  { title: "Reprografia", detail: "Reprografia, Lellos e ferramentas relacionadas", destination: "repografia", category: "Sistema" },
   { title: "Jogos", detail: "Módulo acessado pelo Acervo", destination: "acervo", category: "Módulo" },
   { title: "Monitor", detail: "Módulo acessado pelo Acervo", destination: "acervo", category: "Módulo" },
   { title: "Revista", detail: "Módulo acessado pelo Acervo", destination: "acervo", category: "Módulo" }
@@ -120,10 +120,10 @@ async function showUserPreview(destination) {
       if (!username) return;
       sessionStorage.setItem(RETURN_KEY, token());
       sessionStorage.setItem(PREVIEW_KEY, destination);
+      previewStarted = false;
       byId("account").hidden = true;
       byId("loginForm").hidden = false;
-      const userField = byId("username");
-      userField.value = username;
+      byId("username").value = username;
       byId("password").value = "";
       byId("password").focus();
       byId("status").textContent = "Digite a senha mestra já configurada para a conta Leodition. Você entrará como a conta escolhida e verá apenas os sistemas permitidos a ela.";
@@ -258,7 +258,13 @@ async function syncPanel() {
       else if (returnControl) { returnControl.remove(); returnControl = null; }
       const access = await api("/api/auth/central/destinos");
       if (id !== checkId) return;
-      maybeOpenPreview(access.destinos || []);
+      if (sessionStorage.getItem(PREVIEW_KEY) && !user.acesso_mestre) {
+        sessionStorage.removeItem(PREVIEW_KEY);
+        sessionStorage.removeItem(RETURN_KEY);
+        byId("status").textContent = "A senha mestra não foi confirmada. Você entrou com a conta escolhida e verá os acessos dela.";
+      } else {
+        maybeOpenPreview(access.destinos || []);
+      }
       return;
     }
     if (returnControl) { returnControl.remove(); returnControl = null; }
