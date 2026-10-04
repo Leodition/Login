@@ -1,5 +1,7 @@
 const API = "https://acervo-leoalfa.onrender.com";
 const TOKEN_KEY = "leodition_central_token";
+const RETURN_KEY = "leodition_admin_return";
+const PREVIEW_KEY = "leodition_preview_destination";
 const PRODUCTS = [
   { title: "Acervo e Biblioteca", detail: "Biblioteca e ferramentas administrativas", destination: "acervo", category: "Sistema" },
   { title: "Repografia", detail: "Repografia, Lellos e ferramentas relacionadas", destination: "repografia", category: "Sistema" },
@@ -17,8 +19,11 @@ const el = (tag, className, text) => {
 };
 const token = () => localStorage.getItem(TOKEN_KEY);
 let panel;
+let returnControl;
 let activeTab = "inicio";
 let products = [];
+let checkId = 0;
+let previewStarted = false;
 
 async function api(path, options = {}) {
   const response = await fetch(API + path, {
@@ -68,32 +73,29 @@ function productCard(product) {
   const card = el("article", "admin-product");
   const top = el("div", "admin-product-top");
   top.append(el("span", "admin-tag", product.category), el("span", "admin-status", product.category === "Sistema" ? "Acesso integrado" : "Dentro do Acervo"));
-  const heading = el("h3", "", product.title);
-  const detail = el("p", "", product.detail);
+  card.append(top, el("h3", "", product.title), el("p", "", product.detail));
   const actions = el("div", "admin-product-actions");
   actions.append(makeButton(product.category === "Sistema" ? "Abrir como AdmLeodition" : "Abrir pelo Acervo", "admin-button admin-button-primary", () => openDestination(product.destination)));
   actions.append(makeButton("Visualizar como usuário", "admin-button admin-button-secondary", () => showUserPreview(product.destination)));
-  card.append(top, heading, detail, actions);
+  card.append(actions);
   return card;
 }
 
 async function showUserPreview(destination) {
   const message = panel.querySelector("[data-admin-message]");
   try {
-    const result = await api("/api/auth/status", { headers: {} });
+    const result = await api("/api/auth/status");
     const choices = (result.usuarios || []).filter((user) => user.usuario.toLowerCase() !== "leodition");
     if (!choices.length) {
       message.textContent = "Não há outras contas disponíveis para visualizar.";
       return;
     }
-
     const dialog = document.createElement("dialog");
     dialog.className = "admin-preview-dialog";
     const form = el("form", "");
     form.method = "dialog";
-    form.append(el("p", "admin-eyebrow", "VISUALIZAÇÃO DE ACESSO"));
-    form.append(el("h2", "", "Escolha uma conta"));
-    form.append(el("p", "admin-muted", "A central usará a senha mestra já configurada. Você sairá da conta AdmLeodition nesta aba e poderá entrar novamente ao terminar."));
+    form.append(el("p", "admin-eyebrow", "VISUALIZAÇÃO DE ACESSO"), el("h2", "", "Escolha uma conta"));
+    form.append(el("p", "admin-muted", "Você passará a navegar com a conta escolhida. A sessão AdmLeodition fica guardada nesta aba para facilitar o retorno à central."));
     const label = el("label", "admin-label", "Conta para visualizar");
     const select = document.createElement("select");
     select.required = true;
@@ -112,36 +114,21 @@ async function showUserPreview(destination) {
     dialog.append(form);
     document.body.append(dialog);
     dialog.addEventListener("close", () => dialog.remove(), { once: true });
-    form.addEventListener("submit", async (event) => {
+    form.addEventListener("submit", (event) => {
       event.preventDefault();
       const username = select.value;
       if (!username) return;
-      proceed.disabled = true;
-      feedback.textContent = "Encerrando a sessão administrativa…";
-      try {
-        const current = token();
-        const response = await fetch(API + "/api/auth/logout", {
-          method: "POST",
-          headers: { Authorization: "Bearer " + current, "Content-Type": "application/json" },
-          body: "{}",
-          cache: "no-store"
-        });
-        if (!response.ok) throw new Error("Não foi possível encerrar a sessão administrativa. Tente novamente.");
-        localStorage.removeItem(TOKEN_KEY);
-        byId("account").hidden = true;
-        byId("loginForm").hidden = false;
-        const userField = byId("username");
-        userField.value = username;
-        byId("password").value = "";
-        byId("password").focus();
-        byId("status").textContent = "Digite a senha mestra da Leodition para visualizar esta conta. Depois, escolha o sistema permitido para ela.";
-        byId("loginForm").scrollIntoView({ behavior: "smooth", block: "center" });
-        dialog.close();
-        if (destination) sessionStorage.setItem("leodition_preview_destination", destination);
-      } catch (error) {
-        feedback.textContent = error.message;
-        proceed.disabled = false;
-      }
+      sessionStorage.setItem(RETURN_KEY, token());
+      sessionStorage.setItem(PREVIEW_KEY, destination);
+      byId("account").hidden = true;
+      byId("loginForm").hidden = false;
+      const userField = byId("username");
+      userField.value = username;
+      byId("password").value = "";
+      byId("password").focus();
+      byId("status").textContent = "Digite a senha mestra já configurada para a conta Leodition. Você entrará como a conta escolhida e verá apenas os sistemas permitidos a ela.";
+      byId("loginForm").scrollIntoView({ behavior: "smooth", block: "center" });
+      dialog.close();
     });
     dialog.showModal();
   } catch (error) {
@@ -196,13 +183,67 @@ function renderPanel() {
   switchTab(activeTab);
 }
 
-let checkId = 0;
+async function restoreAdmin() {
+  const adminToken = sessionStorage.getItem(RETURN_KEY);
+  const current = token();
+  if (!adminToken || !current) return;
+  const response = await fetch(API + "/api/auth/logout", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + current, "Content-Type": "application/json" },
+    body: "{}",
+    cache: "no-store"
+  });
+  if (!response.ok) {
+    returnControl.querySelector("span").textContent = "Não foi possível encerrar a visualização. Tente novamente.";
+    returnControl.querySelector("button").disabled = false;
+    return;
+  }
+  localStorage.setItem(TOKEN_KEY, adminToken);
+  sessionStorage.removeItem(RETURN_KEY);
+  sessionStorage.removeItem(PREVIEW_KEY);
+  location.reload();
+}
+
+function renderPreviewReturn() {
+  const adminToken = sessionStorage.getItem(RETURN_KEY);
+  if (!adminToken || returnControl) return;
+  returnControl = el("div", "admin-preview-return");
+  returnControl.append(el("span", "", "Você está visualizando a conta como AdmLeodition."));
+  returnControl.append(makeButton("Voltar ao painel AdmLeodition", "admin-button admin-button-secondary", async (event) => {
+    event.currentTarget.disabled = true;
+    try { await restoreAdmin(); }
+    catch {
+      returnControl.querySelector("span").textContent = "Não foi possível voltar agora. Verifique sua conexão e tente novamente.";
+      event.currentTarget.disabled = false;
+    }
+  }));
+  byId("accountDetails").after(returnControl);
+}
+
+function maybeOpenPreview(destinations) {
+  const requested = sessionStorage.getItem(PREVIEW_KEY);
+  if (!requested || previewStarted) return;
+  const index = destinations.findIndex((item) => item.id === requested);
+  if (index < 0) {
+    sessionStorage.removeItem(PREVIEW_KEY);
+    byId("status").textContent = "Esta conta não tem acesso ao sistema escolhido. Você pode conferir os acessos permitidos.";
+    return;
+  }
+  const button = byId("services").querySelectorAll("button")[index];
+  if (!button) return;
+  previewStarted = true;
+  sessionStorage.removeItem(PREVIEW_KEY);
+  button.click();
+}
+
 async function syncPanel() {
   const id = ++checkId;
   const account = byId("account");
   if (account.hidden || !token()) {
     if (panel) panel.remove();
     panel = null;
+    if (returnControl) returnControl.remove();
+    returnControl = null;
     byId("services").hidden = false;
     return;
   }
@@ -213,8 +254,14 @@ async function syncPanel() {
       if (panel) panel.remove();
       panel = null;
       byId("services").hidden = false;
+      if (user.acesso_mestre) renderPreviewReturn();
+      else if (returnControl) { returnControl.remove(); returnControl = null; }
+      const access = await api("/api/auth/central/destinos");
+      if (id !== checkId) return;
+      maybeOpenPreview(access.destinos || []);
       return;
     }
+    if (returnControl) { returnControl.remove(); returnControl = null; }
     const access = await api("/api/auth/central/destinos");
     if (id !== checkId) return;
     products = access.destinos || [];
