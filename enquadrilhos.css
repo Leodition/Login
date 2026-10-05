@@ -13,3 +13,11 @@
 .eq-window-top>span:nth-child(2){flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .eq-window-top button{display:grid;flex:0 0 24px;place-items:center;width:24px;height:24px;min-height:24px;margin-left:auto;padding:0!important;border-radius:6px;background:transparent!important;line-height:1}
 @media(max-width:700px){.eq-window-top{gap:8px;padding:0 9px}.eq-window-dots{flex-basis:26px}}
+
+/* Make “Projeto de exemplo” read as a real tab instead of a squeezed label. */
+.eq-window-top{height:50px;min-height:50px;gap:10px;padding:0 12px;white-space:nowrap}
+.eq-window-dots{flex:0 0 30px}
+.eq-window-top>span:nth-child(2){display:flex;flex:0 0 auto;align-items:center;min-width:148px;height:35px;padding:0 12px;overflow:visible;border:1px solid #35495b;border-bottom:2px solid #8bc7e7;border-radius:8px 8px 0 0;background:#1c2b38;color:#dceaf2;font-size:10px;font-weight:700;white-space:nowrap}
+.eq-window-top button{display:grid;flex:0 0 26px;place-items:center;width:26px;height:26px;min-height:26px;padding:0!important;border:0!important;border-radius:7px;background:transparent!important;color:#aebdca;line-height:1}
+@media(max-width:700px){.eq-window-top{gap:8px;padding:0 9px}.eq-window-top>span:nth-child(2){min-width:142px;height:34px}}
+@media(max-width:360px){.eq-window-top>span:nth-child(2){min-width:0;padding:0 8px;font-size:9px}}
