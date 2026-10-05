@@ -10,9 +10,9 @@
   <link rel="stylesheet" href="enquadrilhos.css">
 </head>
 <body class="enquadrilhos-page">
-  <header class="eq-header">
+  <header class="eq-header" id="top">
     <a class="eq-brand" href="enquadrilhos.html" aria-label="Enquadrilhos, início"><span class="eq-logo">▦</span><span>Enquadrilhos</span></a>
-    <nav aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#entrar">Entrar</a><a class="eq-nav-cta" href="#criar-conta">Criar conta</a></nav>
+    <nav aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#entrar" data-open-auth="login">Entrar</a><a class="eq-nav-cta" href="#criar-conta" data-open-auth="signup">Criar conta</a></nav>
   </header>
   <main>
     <section class="eq-hero">
@@ -20,7 +20,7 @@
         <span class="eq-kicker"><i></i> PRÉVIA DO PRODUTO</span>
         <h1>Ideias em movimento.<br><em>Trabalho em foco.</em></h1>
         <p>Um espaço simples para tirar projetos da cabeça, organizar os próximos passos e fazer o trabalho avançar junto com sua equipe.</p>
-        <div class="eq-hero-actions"><a class="eq-button eq-button-primary" href="#criar-conta">Criar conta grátis <span>→</span></a><a class="eq-button eq-button-quiet" href="#como-funciona">Conhecer o Enquadrilhos</a></div>
+        <div class="eq-hero-actions"><a class="eq-button eq-button-primary" href="#criar-conta" data-open-auth="signup">Criar conta grátis <span>→</span></a><a class="eq-button eq-button-quiet" href="#como-funciona">Conhecer o Enquadrilhos</a></div>
         <div class="eq-trust"><span>✦</span> Gratuito nesta primeira etapa · equipes de até 6 pessoas</div>
       </div>
       <div class="eq-board-wrap" aria-label="Exemplo ilustrativo de um espaço de trabalho">
@@ -47,14 +47,32 @@
         <article><span class="eq-feature-icon">◎</span><h3>Trabalhe em equipe</h3><p>Convide pessoas para construir junto, com papéis e acessos bem definidos.</p></article>
       </div>
     </section>
-    <section class="eq-auth-area" aria-label="Acesso ao Enquadrilhos">
-      <div class="eq-auth-intro"><span class="eq-kicker">SEU ESPAÇO COMEÇA AQUI</span><h2>Pronto para organizar<br>suas ideias?</h2><p>O Enquadrilhos está sendo preparado. Veja a prévia e nos ajude a dar forma às próximas etapas.</p><div class="eq-preview-notice"><strong>Prévia inicial</strong><span>As contas ainda não estão ativas. Esta página não envia nem salva suas senhas.</span></div></div>
-      <div class="eq-auth-cards">
-        <form class="eq-auth-card" id="eqLoginForm"><span class="eq-card-icon">↗</span><h3>Já tem uma conta?</h3><p>Entre no seu espaço de trabalho.</p><label>E-mail<input name="email" type="email" autocomplete="email" placeholder="voce@exemplo.com" required></label><label>Senha<input name="password" type="password" autocomplete="current-password" placeholder="Sua senha" required minlength="6"></label><button class="eq-button eq-button-primary" type="submit">Entrar <span>→</span></button><div class="eq-form-status" role="status" aria-live="polite"></div></form>
-        <form class="eq-auth-card eq-signup-card" id="eqSignupForm"><span class="eq-card-icon">✳</span><h3>Chegando agora?</h3><p>Crie sua conta individual e comece com sua equipe.</p><label>Seu nome<input name="name" autocomplete="name" placeholder="Como podemos chamar você?" required></label><label>Seu e-mail<input name="email" type="email" autocomplete="email" placeholder="voce@exemplo.com" required></label><button class="eq-button eq-button-secondary" type="submit">Quero criar minha conta <span>→</span></button><div class="eq-form-status" role="status" aria-live="polite"></div></form>
-      </div>
-    </section>
+
   </main>
+
+  <dialog class="eq-auth-dialog" id="eqAuthDialog" aria-labelledby="eqAuthTitle">
+    <button type="button" class="eq-dialog-close" id="eqAuthClose" aria-label="Fechar">×</button>
+    <a class="eq-brand eq-dialog-brand" href="#top"><span class="eq-logo">▦</span><span>Enquadrilhos</span></a>
+    <p class="eq-kicker">SEU ESPAÇO COMEÇA AQUI</p>
+    <h2 id="eqAuthTitle">Entre ou crie sua conta</h2>
+    <div class="eq-auth-tabs" role="tablist" aria-label="Escolha uma opção">
+      <button type="button" role="tab" aria-selected="true" data-auth-tab="login">Entrar</button>
+      <button type="button" role="tab" aria-selected="false" data-auth-tab="signup">Criar conta</button>
+    </div>
+    <p class="eq-preview-notice"><strong>Prévia inicial</strong><span>O cadastro e o login ainda estão sendo conectados. Não digite sua senha: estes formulários ainda não enviam dados.</span></p>
+    <form class="eq-auth-card" id="eqLoginForm">
+      <label>E-mail<input name="email" type="email" autocomplete="email" placeholder="voce@exemplo.com" required></label>
+      <label>Senha<input name="password" type="password" autocomplete="current-password" placeholder="Sua senha" required minlength="6"></label>
+      <button class="eq-button eq-button-primary" type="submit">Entrar <span>→</span></button>
+      <div class="eq-form-status" role="status" aria-live="polite"></div>
+    </form>
+    <form class="eq-auth-card" id="eqSignupForm" hidden>
+      <label>Seu nome<input name="name" autocomplete="name" placeholder="Como podemos chamar você?" required></label>
+      <label>Seu e-mail<input name="email" type="email" autocomplete="email" placeholder="voce@exemplo.com" required></label>
+      <button class="eq-button eq-button-secondary" type="submit">Criar conta grátis <span>→</span></button>
+      <div class="eq-form-status" role="status" aria-live="polite"></div>
+    </form>
+  </dialog>
   <footer class="eq-footer"><a class="eq-brand" href="enquadrilhos.html"><span class="eq-logo">▦</span><span>Enquadrilhos</span></a><span>Uma prévia em construção. Feita para ideias que querem avançar.</span><a href="https://login.leodition.com.br/">Central de acessos</a></footer>
   <script type="module" src="enquadrilhos.mjs"></script>
 </body>
